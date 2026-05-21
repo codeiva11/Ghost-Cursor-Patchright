@@ -110,6 +110,11 @@ from the cursor's starting point.
 hovering over the exact center of the element.
 * The speed of the mouse will take the distance and the size of the element you're clicking on into account.
 
+### Patchright-specific behavior
+* **CDP Session Auto-Recovery:** Automatically monitors and re-establishes the CDP session during frame or page transitions, avoiding typical "detached session" crashes.
+* **Paced Scrolling:** Simulates organic physical mouse-wheel movement by applying randomized `5ms` to `15ms` delay steps between scrolls (unless `scrollSpeed` is set to `100`).
+* **QWERTY keyboard typos & corrections:** The `cursor.type()` helper types character-by-character, automatically introducing neighbor-key typos and correcting them with backspaces, mimicking human typing errors.
+
 <br>
 
 ![ghost-cursor in action](https://cdn.discordapp.com/attachments/418699380833648644/664110683054538772/acc_gen.gif)
@@ -118,15 +123,17 @@ hovering over the exact center of the element.
 
 ## Methods
 
-#### `new GhostCursor(page: puppeteer.Page, { start?: Vector, performRandomMoves?: boolean, defaultOptions?: DefaultOptions, visible?: boolean = false }): GhostCursor`
+#### `GhostCursor.create(page: Page, options?: GhostCursorOptions): Promise<GhostCursor>` (For Patchright / Playwright)
+#### `new GhostCursor(page: puppeteer.Page, options?: GhostCursorOptions): GhostCursor` (For Puppeteer)
 
 Creates the ghost cursor that contains the action functions described below.
 
-- **page:** Puppeteer `page`.
-- **start (optional):** Cursor start position. Default is `{ x: 0, y: 0 }`.
-- **performRandomMoves (optional):** Initially perform random movements. Default is `false`.
-- **defaultOptions (optional):** Set custom default options for `click`, `move`, `moveTo`, and `randomMove` functions. Default values are described below.
-- **visible (optional):** Make the cursor visible, using `installMouseHelper()`. Default is `false`.
+- **page:** Page object (Puppeteer or Playwright/Patchright page).
+- **options (optional):** Options configuration:
+  - `start (Vector):` Cursor start position. Default is `{ x: 0, y: 0 }`.
+  - `performRandomMoves (boolean):` Initially perform random movements. Default is `false`.
+  - `defaultOptions (DefaultOptions):` Set custom default options for `click`, `move`, `moveTo`, etc.
+  - `visible (boolean):` Make the cursor visible, using `installMouseHelper()`. Default is `false`.
  
 #### `toggleRandomMove(random: boolean): void`
 
@@ -216,6 +223,17 @@ Gets the element via a selector. Can use an XPath.
 - **selector:** CSS selector or ElementHandle to identify the target element.
 - **options (optional):** Additional options.
   - `waitForSelector (number):` Time to wait for the selector to appear in milliseconds. Default is to not wait for selector.
+
+#### `type(selector: string | ElementHandle, text: string, options?: TypeOptions): Promise<void>`
+
+Types the specified text into the selector or element character-by-character with realistic, human-like behavior (dynamic typing speeds, simulated typos, and backspaces/corrections).
+
+- **selector:** CSS selector or ElementHandle to identify the input element.
+- **text:** The text string to type.
+- **options (optional):** Additional typing options:
+  - `delay (number):` Average delay between keystrokes in milliseconds. Default is `80`.
+  - `randomizeDelay (boolean):` Randomize typing delays to simulate variation in human speeds. Default is `true`.
+  - `typoRatio (number):` Chance of typing errors (from `0.0` to `1.0`). If an error is simulated, the cursor will type a neighboring key based on QWERTY layout proximity and immediately hit backspace to correct it. Default is `0.0`.
 
 #### `getLocation(): Vector`
 
