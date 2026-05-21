@@ -57,11 +57,7 @@ jobs:
           echo 0 | sudo tee /proc/sys/kernel/apparmor_restrict_unprivileged_userns
           corepack yarn test
 
-      - name: Upload compiled code as artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: ghost-cursor-patchright
-          path: lib/
+
 
   publish:
     needs: build-test
