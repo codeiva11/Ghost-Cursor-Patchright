@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      height: 2500px;
+      width: 2000px;
+      background-color: #fafafa;
+      font-family: sans-serif;
+    }
+    #btn {
+      position: absolute;
+      top: 300px;
+      left: 200px;
+      padding: 20px 40px;
+      font-size: 18px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    #btn:hover {
+      background-color: #0056b3;
+    }
+    #status {
+      margin: 20px;
+      font-size: 20px;
+      font-weight: bold;
+    }
+    #spacer {
+      height: 1200px;
+    }
+    #inp-container {
+      margin-left: 200px;
+      padding: 20px;
+      border: 1px solid #ccc;
+      width: 400px;
+      background-color: #fff;
+    }
+    #inp {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+    #inp-status {
+      margin-top: 10px;
+      font-size: 16px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div id="status">Not clicked yet</div>
+  <button id="btn">Click Me!</button>
+
+  <div id="spacer"></div>
+
+  <div id="inp-container">
+    <h3>Type here (Test Typing):</h3>
+    <input type="text" id="inp" placeholder="Type text here..." />
+    <div id="inp-status">No text typed yet</div>
+  </div>
+
+  <script>
+    const btn = document.getElementById('btn');
+    const status = document.getElementById('status');
+    btn.addEventListener('click', () => {
+      status.innerText = 'CLICKED!';
+      status.style.color = 'green';
+    });
+
+    const inp = document.getElementById('inp');
+    const inpStatus = document.getElementById('inp-status');
+    
+    // Log key inputs to see if typo corrections worked
+    const keysPressed = [];
+    inp.addEventListener('keydown', (e) => {
+      keysPressed.push(e.key);
+    });
+
+    inp.addEventListener('input', () => {
+      const val = inp.value;
+      if (val === 'Hello, AI Agent!') {
+        inpStatus.innerText = 'TYPED SUCCESS!';
+        inpStatus.style.color = 'green';
+        console.log('Final Input value:', val);
+      } else {
+        inpStatus.innerText = 'Current: ' + val;
+        inpStatus.style.color = 'orange';
+      }
+    });
+  </script>
+</body>
+</html>

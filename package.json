@@ -1,10 +1,28 @@
 {
-  "name": "ghost-cursor",
-  "version": "1.4.2",
-  "description": "Move your mouse like a human in puppeteer or generate realistic movements on any 2D plane",
+  "name": "ghost-cursor-patchright",
+  "version": "1.0.0",
+  "description": "Move your mouse like a human in puppeteer, patchright, or generate realistic movements on any 2D plane",
   "repository": "https://github.com/Xetera/ghost-cursor",
   "main": "lib/spoof.js",
   "types": "lib/spoof.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/spoof.d.ts",
+      "default": "./lib/spoof.js"
+    },
+    "./patchright": {
+      "types": "./lib/patchright/index.d.ts",
+      "default": "./lib/patchright/index.js"
+    }
+  },
+  "peerDependencies": {
+    "patchright": ">=1.0.0"
+  },
+  "peerDependenciesMeta": {
+    "patchright": {
+      "optional": true
+    }
+  },
   "scripts": {
     "prepare": "husky",
     "build": "tsc -p tsconfig.build.json",
@@ -37,6 +55,7 @@
     "husky": "9",
     "jest": "30",
     "jest-puppeteer": "11",
+    "patchright": "^1.60.0",
     "puppeteer": "24",
     "ts-node": "^10.9.2",
     "ts-standard": "12",

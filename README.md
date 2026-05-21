@@ -1,8 +1,8 @@
-# Ghost Cursor
+# Ghost Cursor Patchright
 
 <img src="https://media2.giphy.com/media/26ufp2LYURTvL5PRS/giphy.gif" width="100" align="right">
 
-Generate realistic, human-like mouse movement data between coordinates or navigate between elements with puppeteer
+Generate realistic, human-like mouse movement data between coordinates or navigate between elements with puppeteer/patchright
 like the definitely-not-robot you are.
 
 > Oh yeah? Could a robot do _**this?**_
@@ -10,18 +10,18 @@ like the definitely-not-robot you are.
 ## Installation
 
 ```sh
-yarn add ghost-cursor
+yarn add ghost-cursor-patchright
 ```
 or with npm
 ```sh
-npm install ghost-cursor
+npm install ghost-cursor-patchright
 ```
 
 ## Usage
 Generating movement data between 2 coordinates.
 
 ```js
-import { path } from "ghost-cursor"
+import { path } from "ghost-cursor-patchright"
 
 const from = { x: 100, y: 100 }
 const to = { x: 600, y: 700 }
@@ -42,7 +42,7 @@ const route = path(from, to)
 
 Generating movement data between 2 coordinates with timestamps.
 ```js
-import { path } from "ghost-cursor"
+import { path } from "ghost-cursor-patchright"
 
 const from = { x: 100, y: 100 }
 const to = { x: 600, y: 700 }
@@ -65,7 +65,7 @@ const route = path(from, to, { useTimestamps: true })
 Usage with puppeteer:
 
 ```js
-import { GhostCursor } from "ghost-cursor"
+import { GhostCursor } from "ghost-cursor-patchright"
 import puppeteer from "puppeteer"
 
 const run = async (url) => {
@@ -79,6 +79,27 @@ const run = async (url) => {
   // shorthand for
   // await cursor.move(selector)
   // await cursor.click()
+}
+```
+
+Usage with patchright:
+
+```js
+import { GhostCursor } from "ghost-cursor-patchright/patchright"
+import { chromium } from "patchright"
+
+const run = async (url) => {
+  const selector = "#sign-up button"
+  const browser = await chromium.launch({ headless: false });
+  const page = await browser.newPage()
+  
+  // For patchright, use GhostCursor.create (includes CDP session auto-recovery)
+  const cursor = await GhostCursor.create(page, { visible: true })
+  await page.goto(url)
+  await cursor.click(selector)
+  
+  // Human-like typing with auto-correction
+  await cursor.type("#inp", "Hello, AI Agent!", { typoRatio: 0.1 })
 }
 ```
 
