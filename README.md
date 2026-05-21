@@ -2,23 +2,49 @@
 
 <img src="https://media2.giphy.com/media/26ufp2LYURTvL5PRS/giphy.gif" width="100" align="right">
 
-Generate realistic, human-like mouse movement data between coordinates or navigate between elements with patchright
-like the definitely-not-robot you are.
+[![NPM Version](https://img.shields.io/npm/v/ghost-cursor-patchright.svg)](https://www.npmjs.com/package/ghost-cursor-patchright)
+[![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](https://opensource.org/licenses/ISC)
 
-> Oh yeah? Could a robot do _**this?**_
+Generate realistic, human-like mouse movement data between coordinates or navigate between elements with **Patchright**. It helps bypass bot detection systems by simulating organic human behavior (mouse movements, mechanical scrolling, and keyboard typing).
 
-## Installation
+---
+
+## 🌟 Key Features
+
+### 🖱️ 1. Human-Like Mouse Movements (Bezier Curves & Fitts's Law)
+*   **Organic Path Generation:** Instead of straight-line trajectories or artificial noise, it uses cubic Bezier curves to calculate natural curved paths between coordinates.
+*   **Fitts's Law Integration:** Dynamically scales speed based on the target element's size and distance. Smaller or further targets result in slower, more deliberate movements, mimicking human motor control.
+*   **Smart Overshooting & Re-adjustment:** For distant movements, the cursor can overshoot or slightly miss the target element, followed by a minor correction movement to land on the element, imitating human hand inertia.
+*   **Randomized Coordinates:** When hovering over or clicking an element, it picks a randomized point within the element boundaries (adjustable via padding) instead of always clicking the dead center.
+
+### ⌨️ 2. Natural Keyboard Input Emulation
+*   **QWERTY Layout Typo Emulation:** Key strokes are typed character-by-character. Based on the QWERTY layout proximity map, the cursor will occasionally type neighboring keys (e.g., typing 'w' instead of 'e').
+*   **Self-Correction (Backspace):** When a typo occurs, the typing halts, pauses briefly (simulating the human "oops" moment), presses backspace to delete the typo, and then continues with the correct text.
+*   **Randomized Key Delays:** Simulates variable typing speeds by randomizing the delay between keystrokes (e.g., average delay with standard deviation variations).
+
+### 🔄 3. Resilient Browser Integration
+*   **CDP Session Auto-Recovery:** Automatically monitors, re-establishes, and re-attaches the Chrome DevTools Protocol (CDP) session during frame or page transitions, avoiding typical "detached session" crashes.
+*   **Mechanical Wheel Scrolling:** Simulates organic wheel scrolling by applying randomized `5ms` to `15ms` delay steps between mouse-wheel ticks rather than executing instant jumps.
+*   **Universal Selectors:** Supports both standard CSS selectors and complex XPath expressions natively.
+
+---
+
+## 🚀 Installation
 
 ```sh
+# using yarn
 yarn add ghost-cursor-patchright
-```
-or with npm
-```sh
+
+# using npm
 npm install ghost-cursor-patchright
 ```
 
-## Usage
-Generating movement data between 2 coordinates.
+---
+
+## 📖 Quick Start
+
+### 1. Generating Movement Path Data
+You can generate human-like coordinates on a 2D plane without launching a browser.
 
 ```js
 import { path } from "ghost-cursor-patchright"
@@ -27,237 +53,130 @@ const from = { x: 100, y: 100 }
 const to = { x: 600, y: 700 }
 
 const route = path(from, to)
-
 /**
+ * Returns:
  * [
  *   { x: 100, y: 100 },
- *   { x: 108.75573501957051, y: 102.83608396351725 },
- *   { x: 117.54686481838543, y: 106.20019239793275 },
- *   { x: 126.3749821408895, y: 110.08364505509256 },
- *   { x: 135.24167973152743, y: 114.47776168684264 }
- *   ... and so on
+ *   { x: 108.75, y: 102.83 },
+ *   ...
  * ]
  */
 ```
 
-Generating movement data between 2 coordinates with timestamps.
-```js
-import { path } from "ghost-cursor-patchright"
-
-const from = { x: 100, y: 100 }
-const to = { x: 600, y: 700 }
-
-const route = path(from, to, { useTimestamps: true })
-
-/**
- * [
- *   { x: 100, y: 100, timestamp: 1711850430643 },
- *   { x: 114.78071695023473, y: 97.52340709495319, timestamp: 1711850430697 },
- *   { x: 129.1362373468682, y: 96.60141853603243, timestamp: 1711850430749 },
- *   { x: 143.09468422606352, y: 97.18676354029148, timestamp: 1711850430799 },
- *   { x: 156.68418062398405, y: 99.23217132478408, timestamp: 1711850430848 },
- *   ... and so on
- * ]
- */
-```
-
-
-## Usage
+### 2. Browser Navigation and Interaction
+Control your Patchright browser session with realistic movements.
 
 ```js
 import { GhostCursor } from "ghost-cursor-patchright"
 import { chromium } from "patchright"
 
 const run = async (url) => {
-  const selector = "#sign-up button"
-  const browser = await chromium.launch({ headless: false });
+  const browser = await chromium.launch({ headless: false })
   const page = await browser.newPage()
   
-  // Create the ghost cursor (includes CDP session auto-recovery)
+  // Initialize the cursor with visual debugging helper enabled
   const cursor = await GhostCursor.create(page, { visible: true })
-  await page.goto(url)
-  await cursor.click(selector)
   
-  // Human-like typing with auto-correction
-  await cursor.type("#inp", "Hello, AI Agent!", { typoRatio: 0.1 })
+  await page.goto(url)
+  
+  // Moves mouse to element and clicks it
+  await cursor.click("#sign-up-button")
+  
+  // Types text character-by-character with 10% typo ratio
+  await cursor.type("#email-input", "user@example.com", { typoRatio: 0.1 })
 }
 ```
 
-### Advanced Human-Like & Resilient Features
-* **CDP Session Auto-Recovery:** Automatically monitors and re-establishes the CDP session during frame or page transitions, avoiding typical "detached session" crashes.
-* **Paced Scrolling:** Simulates organic physical mouse-wheel movement by applying randomized `5ms` to `15ms` delay steps between scrolls (unless `scrollSpeed` is set to `100`).
-* **QWERTY Keyboard Typos & Corrections:** The `cursor.type()` helper types character-by-character, automatically introducing neighbor-key typos and correcting them with backspaces, mimicking human typing errors.
-* **Smart Mouse Movement & Overshoot:** `cursor.move()` will automatically overshoot or slightly miss and re-adjust for elements that are too far away from the cursor's starting point.
-* **Random Target Points:** When moving over elements, a random coordinate that's within the element will be selected instead of hovering over the exact center.
-* **Fitts's Law Speed Pacing:** The speed of the mouse movement takes the distance and target size into account for realistic movements.
+---
 
-<br>
+## 🛠️ API Reference
 
-![ghost-cursor in action](https://cdn.discordapp.com/attachments/418699380833648644/664110683054538772/acc_gen.gif)
+### Creation Method
 
-> Ghost cursor in action on a form
+#### `GhostCursor.create(page: Page, options?: GhostCursorOptions)`
+Creates the ghost cursor that wraps your Page session.
 
-## Methods
+##### `GhostCursorOptions` Config
+| Parameter | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `start` | `Vector` | `{ x: 0, y: 0 }` | Starting coordinate of the cursor. |
+| `performRandomMoves` | `boolean` | `false` | Actively trigger random movements on idle. |
+| `visible` | `boolean` | `false` | Renders a red dot on the browser representing the cursor. |
+| `defaultOptions` | `DefaultOptions` | `{}` | Configure global default configurations for `click`, `move`, `type`, etc. |
 
-#### `GhostCursor.create(page: Page, options?: GhostCursorOptions): Promise<GhostCursor>`
+---
 
-Creates the ghost cursor that contains the action functions described below.
+### Core Instance Methods
 
-- **page:** Page object (Patchright page).
-- **options (optional):** Options configuration:
-  - `start (Vector):` Cursor start position. Default is `{ x: 0, y: 0 }`.
-  - `performRandomMoves (boolean):` Initially perform random movements. Default is `false`.
-  - `defaultOptions (DefaultOptions):` Set custom default options for `click`, `move`, `moveTo`, etc.
-  - `visible (boolean):` Make the cursor visible, using `installMouseHelper()`. Default is `false`.
- 
-#### `toggleRandomMove(random: boolean): void`
+#### `click(selector?: string | ElementHandle, options?: ClickOptions)`
+Moves the mouse to the specified selector or element handle and clicks it.
 
-Toggles random mouse movements on or off.
+##### `ClickOptions` (Extends `MoveOptions` & `ScrollIntoViewOptions`)
+| Parameter | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `hesitate` | `number` | `0` | Delay before initiating the click in milliseconds. |
+| `waitForClick` | `number` | `0` | Delay between mousedown and mouseup (click speed) in ms. |
+| `moveDelay` | `number` | `2000` | Post-movement delay in ms before clicking. |
+| `button` | `'left' \| 'right' \| 'middle'` | `'left'` | Mouse button to press. |
+| `clickCount` | `number` | `1` | Number of times to click. |
 
-#### `click(selector?: string | ElementHandle, options?: ClickOptions): Promise<void>`
+#### `move(selector: string | ElementHandle, options?: MoveOptions)`
+Smoothly moves the cursor to the target element.
 
-Simulates a mouse click at the specified selector or element.
+##### `MoveOptions` (Extends `ScrollIntoViewOptions`)
+| Parameter | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `paddingPercentage` | `number` | `0` | Percentage of inner padding to constrain target coordinates. `100` always targets the absolute center. |
+| `destination` | `Vector` | `undefined` | Absolute coordinates override to bypass random calculation. |
+| `moveDelay` | `number` | `0` | Delay after movement finishes in ms. |
+| `randomizeMoveDelay` | `boolean` | `true` | Randomizes the `moveDelay` from `0` to the set value. |
+| `moveSpeed` | `number` | `random` | Speed factor of the mouse movement. |
+| `overshootThreshold` | `number` | `500` | Distance limit above which overshoot simulation triggers. |
 
-- **selector (optional):** CSS selector or ElementHandle to identify the target element.
-- **options (optional):** Additional options for clicking. **Extends the `options` of the `move`, `scrollIntoView`, and `getElement` functions (below)**
-  - `hesitate (number):` Delay before initiating the click action in milliseconds. Default is `0`.
-  - `waitForClick (number):` Delay between mousedown and mouseup in milliseconds. Default is `0`.
-  - `moveDelay (number):` Delay after moving the mouse in milliseconds. Default is `2000`. If `randomizeMoveDelay=true`, delay is randomized from 0 to `moveDelay`.
-  - `button (MouseButton):` Mouse button to click. Default is `left`.
-  - `clickCount (number):` Number of times to click the button. Default is `1`.
+#### `type(selector: string | ElementHandle, text: string, options?: TypeOptions)`
+Clicks the element to focus and types the text.
 
-#### `move(selector: string | ElementHandle, options?: MoveOptions): Promise<void>`
+##### `TypeOptions`
+| Parameter | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `delay` | `number` | `80` | Average delay between keystrokes in ms. |
+| `randomizeDelay` | `boolean` | `true` | Randomizes typing speed to simulate human rhythm. |
+| `typoRatio` | `number` | `0.0` | Probability (from `0.0` to `1.0`) of making a QWERTY neighbor typo. |
 
-Moves the mouse to the specified selector or element.
+#### `scrollIntoView(selector: string | ElementHandle, options?: ScrollIntoViewOptions)`
+Scrolls the target element into the viewport smoothly if not already visible.
 
-- **selector:** CSS selector or ElementHandle to identify the target element.
-- **options (optional):** Additional options for moving. **Extends the `options` of the `scrollIntoView` and `getElement` functions (below)**
-  - `paddingPercentage (number):` Percentage of padding to be added inside the element when determining the target point. Default is `0` (may move to anywhere within the element). `100` will always move to center of element.
-  - `destination (Vector):` Destination to move the cursor to, relative to the top-left corner of the element. If specified, `paddingPercentage` is not used. If not specified (default), destination is random point within the `paddingPercentage`.
-  - `moveDelay (number):` Delay after moving the mouse in milliseconds. Default is `0`. If `randomizeMoveDelay=true`, delay is randomized from 0 to `moveDelay`.
-  - `randomizeMoveDelay (boolean):` Randomize delay between actions from `0` to `moveDelay`. Default is `true`.
-  - `maxTries (number):` Maximum number of attempts to mouse-over the element. Default is `10`.
-  - `moveSpeed (number):` Speed of mouse movement. Default is random.
-  - `overshootThreshold (number):` Distance from current location to destination that triggers overshoot to occur. (Below this distance, no overshoot will occur). Default is `500`.
+##### `ScrollIntoViewOptions`
+| Parameter | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `scrollSpeed` | `number` | `100` | Scrolling speed (0 to 100). 100 performs instant scroll. |
+| `scrollDelay` | `number` | `200` | Delay after scroll completes. |
+| `inViewportMargin` | `number` | `0` | Extra padding margin in pixels when validating element visibility. |
 
-#### `moveTo(destination: Vector, options?: MoveToOptions): Promise<void>`
+#### `scroll(delta: Partial<Vector>, options?: ScrollOptions)`
+Scrolls the viewport page by a specified `x` and `y` distance offset.
 
-Moves the mouse to the specified destination point.
+#### `scrollTo(destination: Partial<Vector> | 'top' | 'bottom' | 'left' | 'right', options?: ScrollOptions)`
+Scrolls the viewport to the absolute target position or a viewport edge.
 
-- **destination:** An object with `x` and `y` coordinates representing the target position. For example, `{ x: 500, y: 300 }`.
-- **options (optional):** Additional options for moving.
-  - `moveSpeed (number):` Speed of mouse movement. Default is random.
-  - `moveDelay (number):` Delay after moving the mouse in milliseconds. Default is `0`. If `randomizeMoveDelay=true`, delay is randomized from 0 to `moveDelay`.
-  - `randomizeMoveDelay (boolean):` Randomize delay between actions from `0` to `moveDelay`. Default is `true`.
+#### `getLocation()`
+Returns the current cursor coordinates (`{ x: number, y: number }`).
 
-#### `moveBy(delta: Vector, options?: MoveToOptions): Promise<void>`
+---
 
-Moves the mouse by a specified amount.
+## 🪵 Debug Logging
 
-- **delta:** An object with `x` and `y` coordinates representing the distance to move. For example, `{ x: 10, y: 20 }`.
-- **options (optional):** Additional options for moving. Same as `moveTo` options
-  
-#### `scrollIntoView(selector: string | ElementHandle, options?: ScrollIntoViewOptions) => Promise<void>`
+Enable comprehensive debug logs by setting the environment variable:
 
-Scrolls the element into view. If already in view, no scroll occurs.
+```sh
+# Bash/Terminal
+DEBUG="ghost-cursor:*"
 
-- **selector:** CSS selector or ElementHandle to identify the target element.
-- **options (optional):** Additional options for scrolling. **Extends the `options` of the `getElement` and `scroll` functions (below)**
-  - `scrollSpeed (number):` Scroll speed (when scrolling occurs). 0 to 100. 100 is instant. Default is `100`.
-  - `scrollDelay (number):` Time to wait after scrolling (when scrolling occurs). Default is `200`.
-  - `inViewportMargin (number):` Margin (in px) to add around the element when ensuring it is in the viewport. Default is `0`.
+# Windows PowerShell
+$env:DEBUG = "ghost-cursor:*"
+```
 
-#### `scrollTo: (destination: Partial<Vector> | 'top' | 'bottom' | 'left' | 'right', options?: ScrollOptions) => Promise<void>`
+---
 
-Scrolls to the specified destination point.
-
-- **destination:** An object with `x` and `y` coordinates representing the target position. For example, `{ x: 500, y: 300 }`. Can also be `"top"` or `"bottom"`.
-- **options (optional):** Additional options for scrolling. **Extends the `options` of the `scroll` function (below)**
-
-#### `scroll: (delta: Partial<Vector>, options?: ScrollOptions) => Promise<void>`
-
-Scrolls the page the distance set by `delta`.
-
-- **delta:** An object with `x` and `y` coordinates representing the distance to scroll from the current position.
-- **options (optional):** Additional options for scrolling.
-  - `scrollSpeed (number):` Scroll speed. 0 to 100. 100 is instant. Default is `100`.
-  - `scrollDelay (number):` Time to wait after scrolling. Default is `200`.
-
-#### `mouseDown / mouseUp: (options?: MouseButtonOptions) => Promise<void>`
-
-Mouse button up or down.
-
-- **options (optional):** Additional options for mouse action.
-  - `button (MouseButton):` Mouse button to click. Default is `left`.
-  - `clickCount (number):` Number of times to click the button. Default is `1`.
-  
-#### `getElement(selector: string | ElementHandle, options?: GetElementOptions) => Promise<void>`
-
-Gets the element via a selector. Can use an XPath.
-
-- **selector:** CSS selector or ElementHandle to identify the target element.
-- **options (optional):** Additional options.
-  - `waitForSelector (number):` Time to wait for the selector to appear in milliseconds. Default is to not wait for selector.
-
-#### `type(selector: string | ElementHandle, text: string, options?: TypeOptions): Promise<void>`
-
-Types the specified text into the selector or element character-by-character with realistic, human-like behavior (dynamic typing speeds, simulated typos, and backspaces/corrections).
-
-- **selector:** CSS selector or ElementHandle to identify the input element.
-- **text:** The text string to type.
-- **options (optional):** Additional typing options:
-  - `delay (number):` Average delay between keystrokes in milliseconds. Default is `80`.
-  - `randomizeDelay (boolean):` Randomize typing delays to simulate variation in human speeds. Default is `true`.
-  - `typoRatio (number):` Chance of typing errors (from `0.0` to `1.0`). If an error is simulated, the cursor will type a neighboring key based on QWERTY layout proximity and immediately hit backspace to correct it. Default is `0.0`.
-
-#### `getLocation(): Vector`
-
-Get current location of the cursor.
-
-### Other Utility Methods
-
-#### `installMouseHelper(page: Page): Promise<void>`
-
-Installs a mouse helper on the page, making the pointer visible. Gets executed in the `GhostCursor` initialization when passing `visible=true`. Use for debugging only.
-
-#### `getRandomPagePoint(page: Page): Promise<Vector>`
-
-Gets a random point on the browser window.
-
-#### `path(start: Vector, end: Vector | BoundingBox, options?: number | PathOptions): Vector[] | TimedVector[]`
-
-Generates a set of points for mouse movement between two coordinates.
-
-- **start:** Starting point of the movement.
-- **end:** Ending point (or bounding box) of the movement.
-- **options (optional):** Additional options for generating the path. Can also be a number which will set `spreadOverride`.
-  - `spreadOverride (number):` Override the spread of the generated path.
-  - `moveSpeed (number):` Speed of mouse movement. Default is random.
-  - `useTimestamps (boolean):` Generate timestamps for each point based on the trapezoidal rule.
-
-## How does it work
-
-Bezier curves do almost all the work here. They let us create an infinite amount of curves between any 2 points we want
-and they look quite human-like. (At least moreso than alternatives like perlin or simplex noise)
-
-![](https://mamamoo.xetera.dev/😽🤵👲🧦👵.png)
-
-The magic comes from being able to set multiple points for the curve to go through. This is done by picking
-2 coordinates randomly in a limited area above and under the curve. 
-
-<img src="https://mamamoo.xetera.dev/🧣👎😠🧟✍.png" width="400">
-
-However, we don't want wonky looking cubic curves when using this method because nobody really moves their mouse
-that way, so only one side of the line is picked when generating random points.
-
-<img src="http://simonwallner.at/ext/fitts/shannon.png" width="250" align="right">
-When calculating how fast the mouse should be moving we use <a href="https://en.wikipedia.org/wiki/Fitts%27s_law">Fitts's Law</a>
-to determine the amount of points we should be returning relative to the width of the element being clicked on and the distance
-between the mouse and the object.
-
-## To turn on logging, please set your DEBUG env variable like so:
-
-- OSX: `DEBUG="ghost-cursor:*"`
-- Linux: `DEBUG="ghost-cursor:*"`
-- Windows CMD: `set DEBUG=ghost-cursor:*`
-- Windows PowerShell: `$env:DEBUG = "ghost-cursor:*"`
+## 📄 License
+Released under the [ISC License](LICENSE).
