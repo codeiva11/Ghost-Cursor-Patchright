@@ -48,6 +48,9 @@ jobs:
       - name: Run Build
         run: yarn build
 
+      - name: Install Patchright Browsers
+        run: corepack yarn patchright install chromium --with-deps
+
       - name: Run Tests
         run: |
           # Set up AppArmor usr namespace restrictions for Chromium sandbox on Linux
