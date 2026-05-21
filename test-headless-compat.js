@@ -1,5 +1,5 @@
 const { chromium } = require('patchright')
-const { GhostCursor } = require('./lib/patchright/index.js')
+const { GhostCursor } = require('./lib/spoof.js')
 const path = require('path')
 
 async function runTest (headless) {

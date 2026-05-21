@@ -2,7 +2,7 @@
 
 <img src="https://media2.giphy.com/media/26ufp2LYURTvL5PRS/giphy.gif" width="100" align="right">
 
-Generate realistic, human-like mouse movement data between coordinates or navigate between elements with puppeteer/patchright
+Generate realistic, human-like mouse movement data between coordinates or navigate between elements with patchright
 like the definitely-not-robot you are.
 
 > Oh yeah? Could a robot do _**this?**_
@@ -62,30 +62,10 @@ const route = path(from, to, { useTimestamps: true })
 ```
 
 
-Usage with puppeteer:
+## Usage
 
 ```js
 import { GhostCursor } from "ghost-cursor-patchright"
-import puppeteer from "puppeteer"
-
-const run = async (url) => {
-  const selector = "#sign-up button"
-  const browser = await puppeteer.launch({ headless: false });
-  const page = await browser.newPage()
-  const cursor = new GhostCursor(page)
-  await page.goto(url)
-  await page.waitForSelector(selector)
-  await cursor.click(selector)
-  // shorthand for
-  // await cursor.move(selector)
-  // await cursor.click()
-}
-```
-
-Usage with patchright:
-
-```js
-import { GhostCursor } from "ghost-cursor-patchright/patchright"
 import { chromium } from "patchright"
 
 const run = async (url) => {
@@ -93,7 +73,7 @@ const run = async (url) => {
   const browser = await chromium.launch({ headless: false });
   const page = await browser.newPage()
   
-  // For patchright, use GhostCursor.create (includes CDP session auto-recovery)
+  // Create the ghost cursor (includes CDP session auto-recovery)
   const cursor = await GhostCursor.create(page, { visible: true })
   await page.goto(url)
   await cursor.click(selector)
@@ -103,17 +83,13 @@ const run = async (url) => {
 }
 ```
 
-### Puppeteer-specific behavior
-* `cursor.move()` will automatically overshoot or slightly miss and re-adjust for elements that are too far away
-from the cursor's starting point.
-* When moving over objects, a random coordinate that's within the element will be selected instead of
-hovering over the exact center of the element.
-* The speed of the mouse will take the distance and the size of the element you're clicking on into account.
-
-### Patchright-specific behavior
+### Advanced Human-Like & Resilient Features
 * **CDP Session Auto-Recovery:** Automatically monitors and re-establishes the CDP session during frame or page transitions, avoiding typical "detached session" crashes.
 * **Paced Scrolling:** Simulates organic physical mouse-wheel movement by applying randomized `5ms` to `15ms` delay steps between scrolls (unless `scrollSpeed` is set to `100`).
-* **QWERTY keyboard typos & corrections:** The `cursor.type()` helper types character-by-character, automatically introducing neighbor-key typos and correcting them with backspaces, mimicking human typing errors.
+* **QWERTY Keyboard Typos & Corrections:** The `cursor.type()` helper types character-by-character, automatically introducing neighbor-key typos and correcting them with backspaces, mimicking human typing errors.
+* **Smart Mouse Movement & Overshoot:** `cursor.move()` will automatically overshoot or slightly miss and re-adjust for elements that are too far away from the cursor's starting point.
+* **Random Target Points:** When moving over elements, a random coordinate that's within the element will be selected instead of hovering over the exact center.
+* **Fitts's Law Speed Pacing:** The speed of the mouse movement takes the distance and target size into account for realistic movements.
 
 <br>
 
@@ -123,12 +99,11 @@ hovering over the exact center of the element.
 
 ## Methods
 
-#### `GhostCursor.create(page: Page, options?: GhostCursorOptions): Promise<GhostCursor>` (For Patchright / Playwright)
-#### `new GhostCursor(page: puppeteer.Page, options?: GhostCursorOptions): GhostCursor` (For Puppeteer)
+#### `GhostCursor.create(page: Page, options?: GhostCursorOptions): Promise<GhostCursor>`
 
 Creates the ghost cursor that contains the action functions described below.
 
-- **page:** Page object (Puppeteer or Playwright/Patchright page).
+- **page:** Page object (Patchright page).
 - **options (optional):** Options configuration:
   - `start (Vector):` Cursor start position. Default is `{ x: 0, y: 0 }`.
   - `performRandomMoves (boolean):` Initially perform random movements. Default is `false`.
