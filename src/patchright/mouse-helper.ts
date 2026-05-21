@@ -91,9 +91,9 @@ export async function installMouseHelper (page: Page): Promise<{ removeMouseHelp
             display: none;
           }
         `
-        const head = document.head || document.documentElement
+        const head = document.head !== null ? document.head : document.documentElement
         head.appendChild(styleElement)
-        const target = document.body || document.documentElement
+        const target = document.body !== null ? document.body : document.documentElement
         target.appendChild(box)
 
         /** Detect cursor type based on the hovered element */
@@ -242,9 +242,9 @@ export async function installMouseHelper (page: Page): Promise<{ removeMouseHelp
           display: none;
         }
       `
-      const head = document.head || document.documentElement
+      const head = document.head !== null ? document.head : document.documentElement
       head.appendChild(styleElement)
-      const target = document.body || document.documentElement
+      const target = document.body !== null ? document.body : document.documentElement
       target.appendChild(box)
 
       const detectCursorType = (target: EventTarget | null): string => {

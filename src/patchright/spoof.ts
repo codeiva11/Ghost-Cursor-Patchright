@@ -1,13 +1,5 @@
-import type { ElementHandle, Page, CDPSession, BrowserContext } from 'patchright'
+import type { ElementHandle, Page, CDPSession } from 'patchright'
 import debug from 'debug'
-
-/** BoundingBox type — Patchright uses inline types, so we define our own. */
-export interface BoundingBox {
-  x: number
-  y: number
-  width: number
-  height: number
-}
 import {
   type Vector,
   type TimedVector,
@@ -23,6 +15,14 @@ import {
   extrapolate
 } from '../math'
 import { installMouseHelper } from './mouse-helper'
+
+/** BoundingBox type — Patchright uses inline types, so we define our own. */
+export interface BoundingBox {
+  x: number
+  y: number
+  width: number
+  height: number
+}
 
 export { installMouseHelper }
 
@@ -247,9 +247,32 @@ const fitts = (distance: number, width: number): number => {
 }
 
 const QWERTY_NEIGHBORS: Record<string, string> = {
-  q: 'wase', w: 'qase3', e: 'wsdr4', r: 'edft5', t: 'rfgy6', y: 'tghu7', u: 'yhij8', i: 'ujok9', o: 'iklp0', p: 'ol[-',
-  a: 'qwszx', s: 'weazxd', d: 'erfcxs', f: 'rtgvcd', g: 'tyhbvf', h: 'yujnbg', j: 'uikmnh', k: 'ijlm', l: 'okp;',
-  z: 'asx', x: 'zsdc', c: 'xdfv', v: 'cfgb', b: 'vghn', n: 'bhjm', m: 'njkl'
+  q: 'wase',
+  w: 'qase3',
+  e: 'wsdr4',
+  r: 'edft5',
+  t: 'rfgy6',
+  y: 'tghu7',
+  u: 'yhij8',
+  i: 'ujok9',
+  o: 'iklp0',
+  p: 'ol[-',
+  a: 'qwszx',
+  s: 'weazxd',
+  d: 'erfcxs',
+  f: 'rtgvcd',
+  g: 'tyhbvf',
+  h: 'yujnbg',
+  j: 'uikmnh',
+  k: 'ijlm',
+  l: 'okp;',
+  z: 'asx',
+  x: 'zsdc',
+  c: 'xdfv',
+  v: 'cfgb',
+  b: 'vghn',
+  n: 'bhjm',
+  m: 'njkl'
 }
 
 const getRandomTypoChar = (char: string): string => {
@@ -297,8 +320,8 @@ export const getRandomPagePoint = async (page: Page): Promise<Vector> => {
   if (viewport === null) {
     try {
       viewport = await page.evaluate(() => ({
-        width: window.innerWidth || document.documentElement.clientWidth || 1920,
-        height: window.innerHeight || document.documentElement.clientHeight || 1080
+        width: (window.innerWidth !== 0) ? window.innerWidth : ((document.documentElement.clientWidth !== 0) ? document.documentElement.clientWidth : 1920),
+        height: (window.innerHeight !== 0) ? window.innerHeight : ((document.documentElement.clientHeight !== 0) ? document.documentElement.clientHeight : 1080)
       }))
     } catch {
       // Last resort fallback: use common default viewport
@@ -619,7 +642,7 @@ export class GhostCursor {
           y: v.y
         }
 
-        if ('timestamp' in v) dispatchParams.timestamp = (v as TimedVector).timestamp
+        if ('timestamp' in v) dispatchParams.timestamp = (v).timestamp
 
         await this.cdpSession.send('Input.dispatchMouseEvent', dispatchParams as any)
 
@@ -629,7 +652,7 @@ export class GhostCursor {
         if (i > 0) {
           const prev = vectors[i - 1]
           if ('timestamp' in v && 'timestamp' in prev) {
-            const timeDiff = (v as TimedVector).timestamp - (prev as TimedVector).timestamp
+            const timeDiff = (v).timestamp - (prev).timestamp
             if (timeDiff > 0) {
               await delay(timeDiff)
             }
@@ -910,14 +933,14 @@ export class GhostCursor {
       scrollPositionTop,
       scrollPositionLeft
     } = await this.page.evaluate(() => {
-      const body = document.body || document.documentElement
+      const body = document.body !== null ? document.body : document.documentElement
       return {
-        viewportWidth: body?.clientWidth || window.innerWidth || 1920,
-        viewportHeight: body?.clientHeight || window.innerHeight || 1080,
-        docHeight: body?.scrollHeight || window.innerHeight || 1080,
-        docWidth: body?.scrollWidth || window.innerWidth || 1920,
-        scrollPositionTop: window.scrollY || 0,
-        scrollPositionLeft: window.scrollX || 0
+        viewportWidth: (body.clientWidth !== 0) ? body.clientWidth : ((window.innerWidth !== 0) ? window.innerWidth : 1920),
+        viewportHeight: (body.clientHeight !== 0) ? body.clientHeight : ((window.innerHeight !== 0) ? window.innerHeight : 1080),
+        docHeight: (body.scrollHeight !== 0) ? body.scrollHeight : ((window.innerHeight !== 0) ? window.innerHeight : 1080),
+        docWidth: (body.scrollWidth !== 0) ? body.scrollWidth : ((window.innerWidth !== 0) ? window.innerWidth : 1920),
+        scrollPositionTop: window.scrollY,
+        scrollPositionLeft: window.scrollX
       }
     })
 
@@ -1111,12 +1134,12 @@ export class GhostCursor {
       scrollPositionTop,
       scrollPositionLeft
     } = await this.page.evaluate(() => {
-      const body = document.body || document.documentElement
+      const body = document.body !== null ? document.body : document.documentElement
       return {
-        docHeight: body?.scrollHeight || window.innerHeight || 1080,
-        docWidth: body?.scrollWidth || window.innerWidth || 1920,
-        scrollPositionTop: window.scrollY || 0,
-        scrollPositionLeft: window.scrollX || 0
+        docHeight: (body.scrollHeight !== 0) ? body.scrollHeight : ((window.innerHeight !== 0) ? window.innerHeight : 1080),
+        docWidth: (body.scrollWidth !== 0) ? body.scrollWidth : ((window.innerWidth !== 0) ? window.innerWidth : 1920),
+        scrollPositionTop: window.scrollY,
+        scrollPositionLeft: window.scrollX
       }
     })
 
