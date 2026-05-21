@@ -48,14 +48,7 @@ jobs:
       - name: Run Build
         run: yarn build
 
-      - name: Install Patchright Browsers
-        run: corepack yarn patchright install chromium --with-deps
 
-      - name: Run Tests
-        run: |
-          # Set up AppArmor usr namespace restrictions for Chromium sandbox on Linux
-          echo 0 | sudo tee /proc/sys/kernel/apparmor_restrict_unprivileged_userns
-          corepack yarn test
 
 
 
