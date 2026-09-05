@@ -59,7 +59,7 @@
     "patchright": "^1.62.3",
     "ts-node": "^10.9.2",
     "ts-standard": "^12.0.2",
-    "typescript": "^7.0.2"
+    "typescript": "6"
   },
   "jest": {
     "verbose": true,
