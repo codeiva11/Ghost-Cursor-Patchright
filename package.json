@@ -1,6 +1,6 @@
 {
   "name": "ghost-cursor-patchright",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Move your mouse like a human in patchright/playwright, or generate realistic movements on any 2D plane",
   "repository": "https://github.com/codeiva11/Ghost-Cursor-Patchright",
   "main": "lib/spoof.js",
