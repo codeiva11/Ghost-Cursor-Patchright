@@ -44,19 +44,19 @@
     "lib/**/*"
   ],
   "dependencies": {
-    "@types/bezier-js": "4",
-    "bezier-js": "^6.1.4",
-    "debug": "^4.4.3"
+    "@types/bezier-js": "latest",
+    "bezier-js": "latest",
+    "debug": "latest"
   },
   "devDependencies": {
-    "@swc/core": "^1.15.24",
+    "@swc/core": "latest",
     "@swc/jest": "^0.2.39",
     "@types/debug": "^4.1.13",
     "@types/jest": "30",
     "@types/node": "^25.5.2",
     "husky": "9",
     "jest": "30",
-    "patchright": "^1.60.0",
+    "patchright": "latest",
     "ts-node": "^10.9.2",
     "ts-standard": "12",
     "typescript": "6"
