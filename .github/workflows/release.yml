@@ -40,7 +40,7 @@ jobs:
           corepack install
 
       - name: Install dependencies
-        run: corepack yarn install --immutable
+        run: corepack yarn install
 
       - name: Run Lint
         run: yarn lint
@@ -76,7 +76,7 @@ jobs:
 
       - name: Install dependencies and build
         run: |
-          corepack yarn install --immutable
+          corepack yarn install
           yarn build
 
       - name: Configure Git Identity
@@ -85,7 +85,7 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Publish to NPM
-        run: npm publish
+        run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
