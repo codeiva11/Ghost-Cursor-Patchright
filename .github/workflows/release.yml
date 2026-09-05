@@ -40,7 +40,7 @@ jobs:
           corepack install
 
       - name: Install dependencies
-        run: corepack yarn install
+        run: corepack yarn install --no-immutable
 
       - name: Run Lint
         run: yarn lint
@@ -76,7 +76,7 @@ jobs:
 
       - name: Install dependencies and build
         run: |
-          corepack yarn install
+          corepack yarn install --no-immutable
           yarn build
 
       - name: Configure Git Identity
