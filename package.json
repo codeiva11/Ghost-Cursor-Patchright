@@ -56,7 +56,7 @@
     "@types/node": "^25.5.2",
     "husky": "9",
     "jest": "30",
-    "patchright": "^latest",
+    "patchright": "latest",
     "ts-node": "^10.9.2",
     "ts-standard": "12",
     "typescript": "6"
