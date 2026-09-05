@@ -1419,7 +1419,7 @@ export class GhostCursor {
     } else {
       const targetElem = await this.getElement(target as string | ElementHandle)
       const box = await getElementBox(this.page, targetElem)
-      targetVec = getRandomBoxPoint(box, optionsResolved.paddingPercentage ?? 10)
+      targetVec = getRandomBoxPoint(box, { paddingPercentage: optionsResolved.paddingPercentage ?? 10 })
     }
 
     // Optional midway hesitation (simulates slider friction / alignment check)
