@@ -15,7 +15,8 @@ import {
   extrapolate,
   gaussianRandom,
   minimumJerk,
-  addBiometricTremor
+  addBiometricTremor,
+  randomNumberRange
 } from './math'
 import { installMouseHelper } from './mouse-helper'
 
