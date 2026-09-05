@@ -156,8 +156,8 @@ Scrolls the target element into the viewport smoothly if not already visible.
 #### `scroll(delta: Partial<Vector>, options?: ScrollOptions)`
 Scrolls the viewport page by a specified `x` and `y` distance offset.
 
-#### `scrollTo(destination: Partial<Vector> | 'top' | 'bottom' | 'left' | 'right', options?: ScrollOptions)`
-Scrolls the viewport to the absolute target position or a viewport edge.
+#### `scrollTo(destination: Partial<Vector> | 'top' | 'bottom' | 'left' | 'right' | ElementHandle, options?: ScrollOptions)`
+Scrolls the viewport to the absolute target position, a viewport edge, or an element handle.
 
 #### `getLocation()`
 Returns the current cursor coordinates (`{ x: number, y: number }`).

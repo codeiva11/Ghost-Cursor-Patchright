@@ -165,7 +165,8 @@ export interface MoveToOptions extends PathOptions, Pick<MoveOptions, 'moveDelay
   readonly moveDelay?: number
 }
 
-export type ScrollToDestination = Partial<Vector> | 'top' | 'bottom' | 'left' | 'right'
+type PagePosition = 'top' | 'bottom' | 'left' | 'right'
+export type ScrollToDestination = Partial<Vector> | PagePosition | ElementHandle
 
 export type MouseButtonOptions = Pick<ClickOptions, 'button' | 'clickCount'>
 
@@ -1144,7 +1145,7 @@ export class GhostCursor {
       }
     })
 
-    const to = ((): Partial<Vector> => {
+    const to: Partial<Vector> = await (async (): Promise<Partial<Vector>> => {
       switch (destination) {
         case 'top':
           return { y: 0 }
@@ -1154,8 +1155,22 @@ export class GhostCursor {
           return { x: 0 }
         case 'right':
           return { x: docWidth }
-        default:
-          return destination
+        default: {
+          if (typeof destination === 'object' && destination !== null && 'boundingBox' in destination && typeof (destination as any).boundingBox === 'function') {
+            const box = await (destination as ElementHandle).boundingBox()
+            if (box == null) {
+              throw new Error('no boundingBox')
+            }
+            // boundingBox() is viewport-relative; convert to document-relative
+            return {
+              x: box.x + scrollPositionLeft,
+              y: box.y + scrollPositionTop
+            }
+          }
+
+          // Partial<Vector>
+          return destination as Partial<Vector>
+        }
       }
     })()
 
