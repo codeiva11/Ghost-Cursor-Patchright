@@ -1,4 +1,4 @@
-import type { ElementHandle, Page, CDPSession } from 'patchright'
+import type { ElementHandle, Page, CDPSession, Frame } from 'patchright'
 import debug from 'debug'
 import {
   type Vector,
@@ -12,7 +12,10 @@ import {
   add,
   clamp,
   scale,
-  extrapolate
+  extrapolate,
+  gaussianRandom,
+  minimumJerk,
+  addBiometricTremor
 } from './math'
 import { installMouseHelper } from './mouse-helper'
 
@@ -149,6 +152,19 @@ export interface PathOptions {
    * Generate timestamps for each point in the path.
    */
   readonly useTimestamps?: boolean
+
+  /**
+   * Sub-pixel physiological tremor intensity (0 to 1).
+   * Generates micro-tremors to evade bot ML classifiers.
+   * @default 0.35
+   */
+  readonly tremor?: number
+
+  /**
+   * Use biological minimum-jerk velocity re-distribution.
+   * @default true
+   */
+  readonly minimumJerk?: boolean
 }
 
 export interface RandomMoveOptions extends Pick<MoveOptions, 'moveDelay' | 'randomizeMoveDelay' | 'moveSpeed'> {
@@ -186,6 +202,26 @@ export interface TypeOptions {
    * @default 0.05
    */
   readonly typoRatio?: number
+  /**
+   * Key dwell time (holding keydown to keyup in milliseconds).
+   * Follows human cognitive distribution (40ms - 120ms).
+   * @default 65
+   */
+  readonly dwellTime?: number
+}
+
+export interface DragAndDropOptions extends MoveOptions {
+  /** Delay before releasing the mouse button in ms. @default 100 */
+  readonly dropDelay?: number
+  /** Add intermediate slight hesitation midway through dragging. @default true */
+  readonly hesitateMidway?: boolean
+}
+
+export interface IdleOptions {
+  /** Duration to wander around in milliseconds. @default 3000 */
+  readonly duration?: number
+  /** Interval between micro movements in ms. @default 800 */
+  readonly interval?: number
 }
 
 /**
@@ -400,7 +436,27 @@ export function path (
     : Math.random()
   const baseTime = speed * MIN_STEPS
   const steps = Math.ceil((Math.log2(fitts(length, width) + 1) + baseTime) * 3)
-  const re = curve.getLUT(steps)
+  let re = curve.getLUT(steps)
+
+  // Re-sample points along the curve using minimum jerk velocity profile if requested
+  if (optionsResolved.minimumJerk !== false && re.length > 3) {
+    const resampled: Vector[] = [re[0]]
+    const totalSteps = re.length
+    for (let i = 1; i < totalSteps - 1; i++) {
+      const normalizedT = minimumJerk(i / (totalSteps - 1), 0.15)
+      const pt = curve.get(normalizedT)
+      resampled.push({ x: pt.x, y: pt.y })
+    }
+    resampled.push(re[re.length - 1])
+    re = resampled
+  }
+
+  // Inject physiological micro-tremor to defeat statistical & ML bot classifiers
+  const tremorIntensity = optionsResolved.tremor ?? 0.35
+  if (tremorIntensity > 0) {
+    re = addBiometricTremor(re, tremorIntensity)
+  }
+
   return clampPositive(re, optionsResolved)
 }
 
@@ -1266,14 +1322,166 @@ export class GhostCursor {
       }
 
       try {
-        await this.page.keyboard.type(char)
+        // Cognitive dwell time simulation (time key stays held down)
+        const dwellTime = Math.max(25, Math.round(gaussianRandom(optionsResolved.dwellTime ?? 65, 15)))
+        await this.page.keyboard.down(char)
+        await delay(dwellTime)
+        await this.page.keyboard.up(char)
       } catch (err) {
-        log('Warning: could not type character:', err)
+        // Fallback to standard type if down/up fails for special characters
+        try {
+          await this.page.keyboard.type(char)
+        } catch (typeErr) {
+          log('Warning: could not type character:', typeErr)
+        }
       }
 
       // Delay between key presses
       const keyDelay = optionsResolved.delay * (optionsResolved.randomizeDelay ? (Math.random() * 0.8 + 0.6) : 1)
       await delay(keyDelay)
+    }
+  }
+
+  /**
+   * Performs human-like double-click with realistic inter-click interval (100ms - 220ms).
+   */
+  public async doubleClick (
+    selector?: string | ElementHandle,
+    options?: ClickOptions
+  ): Promise<void> {
+    if (selector !== undefined) {
+      await this.move(selector, options)
+    }
+    await this.mouseDown(options)
+    await delay(randomNumberRange(40, 80))
+    await this.mouseUp(options)
+    // Human interval between clicks
+    await delay(randomNumberRange(80, 160))
+    await this.mouseDown(options)
+    await delay(randomNumberRange(40, 80))
+    await this.mouseUp(options)
+  }
+
+  /**
+   * Performs human-like triple-click (useful for selecting full paragraphs or code lines).
+   */
+  public async tripleClick (
+    selector?: string | ElementHandle,
+    options?: ClickOptions
+  ): Promise<void> {
+    if (selector !== undefined) {
+      await this.move(selector, options)
+    }
+    for (let i = 0; i < 3; i++) {
+      await this.mouseDown(options)
+      await delay(randomNumberRange(35, 75))
+      await this.mouseUp(options)
+      if (i < 2) {
+        await delay(randomNumberRange(70, 140))
+      }
+    }
+  }
+
+  /**
+   * Drag and drop from source to destination.
+   * Emulates human slider manipulation, CAPTCHA slide-to-verify, and drag interactions
+   * with acceleration, realistic friction, and optional intermediate hesitation.
+   */
+  public async dragAndDrop (
+    source: string | ElementHandle | Vector,
+    target: string | ElementHandle | Vector,
+    options?: DragAndDropOptions
+  ): Promise<void> {
+    const optionsResolved = {
+      dropDelay: 120,
+      hesitateMidway: true,
+      moveSpeed: 0.8,
+      ...options
+    } satisfies DragAndDropOptions
+
+    // Move smoothly to source
+    if (typeof source === 'object' && 'x' in source && 'y' in source) {
+      await this.moveTo(source, optionsResolved)
+    } else {
+      await this.move(source as string | ElementHandle, optionsResolved)
+    }
+
+    // Hesitate slightly before grabbing
+    await delay(randomNumberRange(100, 250))
+    await this.mouseDown({ button: 'left' })
+    await delay(randomNumberRange(80, 180))
+
+    // Determine target coordinates
+    let targetVec: Vector
+    if (typeof target === 'object' && 'x' in target && 'y' in target) {
+      targetVec = target as Vector
+    } else {
+      const targetElem = await this.getElement(target as string | ElementHandle)
+      const box = await getElementBox(this.page, targetElem)
+      targetVec = getRandomBoxPoint(box, optionsResolved.paddingPercentage ?? 10)
+    }
+
+    // Optional midway hesitation (simulates slider friction / alignment check)
+    if (optionsResolved.hesitateMidway) {
+      const midPoint: Vector = {
+        x: (this.location.x + targetVec.x) / 2 + randomNumberRange(-3, 3),
+        y: (this.location.y + targetVec.y) / 2 + randomNumberRange(-3, 3)
+      }
+      await this.moveTo(midPoint, { ...optionsResolved, moveSpeed: 0.9 })
+      await delay(randomNumberRange(40, 120))
+    }
+
+    // Drag to target with slight overshoot correction
+    await this.moveTo(targetVec, { ...optionsResolved, moveSpeed: 0.7 })
+    await delay(optionsResolved.dropDelay)
+    await this.mouseUp({ button: 'left' })
+    await delay(randomNumberRange(80, 200))
+  }
+
+  /**
+   * Simulates human reading and wandering behavior during idle moments.
+   * Moves the cursor naturally along imaginary lines or drifts across the viewport.
+   */
+  public async idle (options?: IdleOptions): Promise<void> {
+    const duration = options?.duration ?? 3000
+    const interval = options?.interval ?? 800
+    const startTime = Date.now()
+
+    while (Date.now() - startTime < duration) {
+      if (!this.isConnected()) return
+      const randPoint = await getRandomPagePoint(this.page)
+      // Small drift vector rather than teleporting across the entire screen
+      const driftVector: Vector = {
+        x: clamp(this.location.x + (randPoint.x - this.location.x) * 0.35, 10, 1900),
+        y: clamp(this.location.y + (randPoint.y - this.location.y) * 0.35, 10, 1000)
+      }
+      await this.moveTo(driftVector, { moveSpeed: 0.5, spreadOverride: 30 })
+      await delay(interval * randomNumberRange(0.7, 1.3))
+    }
+  }
+
+  /**
+   * Helper to resolve coordinates when interacting with elements inside iframes.
+   */
+  public async getFrameElementBox (
+    frame: Frame,
+    selector: string
+  ): Promise<BoundingBox> {
+    const frameElement = await frame.frameElement()
+    const frameBox = await frameElement.boundingBox()
+    if (frameBox === null) throw new Error('Could not get frame element bounding box')
+
+    const elem = await frame.$(selector)
+    if (elem === null) throw new Error(`Could not find selector "${selector}" inside frame`)
+
+    const box = await elem.boundingBox()
+    if (box === null) throw new Error(`Could not get bounding box for selector "${selector}" in frame`)
+
+    return {
+      x: frameBox.x + box.x,
+      y: frameBox.y + box.y,
+      width: box.width,
+      height: box.height
     }
   }
 }

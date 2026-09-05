@@ -13,14 +13,18 @@ Generate realistic, human-like mouse movement data between coordinates or naviga
 
 ### 🖱️ 1. Human-Like Mouse Movements (Bezier Curves & Fitts's Law)
 *   **Organic Path Generation:** Instead of straight-line trajectories or artificial noise, it uses cubic Bezier curves to calculate natural curved paths between coordinates.
-*   **Fitts's Law Integration:** Dynamically scales speed based on the target element's size and distance. Smaller or further targets result in slower, more deliberate movements, mimicking human motor control.
-*   **Smart Overshooting & Re-adjustment:** For distant movements, the cursor can overshoot or slightly miss the target element, followed by a minor correction movement to land on the element, imitating human hand inertia.
-*   **Randomized Coordinates:** When hovering over or clicking an element, it picks a randomized point within the element boundaries (adjustable via padding) instead of always clicking the dead center.
+*   **Physiological Micro-Tremor (Sub-Pixel Noise):** Injects 8–12 Hz biometric oscillations into movements to defeat ML polynomial curve bot classifiers.
+*   **Minimum Jerk Velocity Model:** Mimics human arm neurobiology (Flash & Hogan model) with smooth acceleration and fine deceleration near targets.
+*   **Fitts's Law Integration:** Dynamically scales speed based on the target element's size and distance.
+*   **Smart Overshooting & Re-adjustment:** For distant movements, the cursor can overshoot or slightly miss the target element, followed by a minor correction movement.
+*   **Drag & Drop / Slider Support:** Purpose-built `dragAndDrop` method for slider captchas (GeeTest, Cloudflare) with realistic friction.
+*   **Idle Simulation:** Wanders and drifts naturally during agent thought cycles using `cursor.idle()`.
 
 ### ⌨️ 2. Natural Keyboard Input Emulation
-*   **QWERTY Layout Typo Emulation:** Key strokes are typed character-by-character. Based on the QWERTY layout proximity map, the cursor will occasionally type neighboring keys (e.g., typing 'w' instead of 'e').
-*   **Self-Correction (Backspace):** When a typo occurs, the typing halts, pauses briefly (simulating the human "oops" moment), presses backspace to delete the typo, and then continues with the correct text.
-*   **Randomized Key Delays:** Simulates variable typing speeds by randomizing the delay between keystrokes (e.g., average delay with standard deviation variations).
+*   **QWERTY Layout Typo Emulation:** Key strokes are typed character-by-character. Based on the QWERTY layout proximity map, the cursor will occasionally type neighboring keys.
+*   **Self-Correction (Backspace):** When a typo occurs, the typing pauses briefly ("oops" moment), deletes the mistake, and proceeds.
+*   **Cognitive Dwell-Time Distribution:** Simulates variable key-down hold times (40ms–120ms) using Gaussian distribution rather than instantaneous press/release.
+*   **Multi-Clicking Patterns:** Dedicated `doubleClick` and `tripleClick` with natural inter-click human latencies.
 
 ### 🔄 3. Resilient Browser Integration
 *   **CDP Session Auto-Recovery:** Automatically monitors, re-establishes, and re-attaches the Chrome DevTools Protocol (CDP) session during frame or page transitions, avoiding typical "detached session" crashes.
@@ -158,6 +162,21 @@ Scrolls the viewport page by a specified `x` and `y` distance offset.
 
 #### `scrollTo(destination: Partial<Vector> | 'top' | 'bottom' | 'left' | 'right' | ElementHandle, options?: ScrollOptions)`
 Scrolls the viewport to the absolute target position, a viewport edge, or an element handle.
+
+#### `dragAndDrop(source: string | ElementHandle | Vector, target: string | ElementHandle | Vector, options?: DragAndDropOptions)`
+Smooth drag and drop from source to destination with biological acceleration, slider friction, and overshoot correction.
+
+#### `doubleClick(selector?: string | ElementHandle, options?: ClickOptions)`
+Human-like double-click with natural 100ms - 220ms inter-click latency.
+
+#### `tripleClick(selector?: string | ElementHandle, options?: ClickOptions)`
+Triple-click for selecting full paragraphs or entire code blocks.
+
+#### `idle(options?: IdleOptions)`
+Simulates human wandering and reading behavior during idle pauses.
+
+#### `getFrameElementBox(frame: Frame, selector: string)`
+Resolves seamless cross-origin coordinate translation for elements embedded inside iframes (e.g., Turnstile, reCAPTCHA).
 
 #### `getLocation()`
 Returns the current cursor coordinates (`{ x: number, y: number }`).

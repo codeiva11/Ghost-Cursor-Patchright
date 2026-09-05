@@ -99,3 +99,62 @@ export const bezierCurveSpeed = (
   const B2 = 3 * (1 - t) ** 2 * (P1.y - P0.y) + 6 * (1 - t) * t * (P2.y - P1.y) + 3 * t ** 2 * (P3.y - P2.y)
   return Math.sqrt(B1 ** 2 + B2 ** 2)
 }
+
+/**
+ * Generates a random number following a normal (Gaussian) distribution using Box-Muller transform.
+ */
+export const gaussianRandom = (mean: number, stdDev: number): number => {
+  let u = 0
+  let v = 0
+  while (u === 0) u = Math.random() // Converting [0,1) to (0,1)
+  while (v === 0) v = Math.random()
+  const z = Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v)
+  return mean + z * stdDev
+}
+
+/**
+ * Flash & Hogan Minimum Jerk Velocity Profile (biological arm-movement model).
+ * Maps normalized time t [0, 1] to normalized position s [0, 1].
+ * Optionally skews the deceleration phase to simulate fine motor correction near targets.
+ */
+export const minimumJerk = (t: number, skew: number = 0.1): number => {
+  const clampedT = clamp(t, 0, 1)
+  // Base minimum jerk: s(t) = 10*t^3 - 15*t^4 + 6*t^5
+  const s = 10 * Math.pow(clampedT, 3) - 15 * Math.pow(clampedT, 4) + 6 * Math.pow(clampedT, 5)
+  if (skew === 0) return s
+  // Asymmetric deceleration: spending slightly more time on the final 20% of movement
+  return Math.pow(s, 1 + (skew * (1 - clampedT)))
+}
+
+/**
+ * Simulates natural human physiological micro-tremor (8-12Hz sub-pixel oscillations).
+ * Prevents mathematical Bézier curves from triggering ML polynomial-classifier bot detectors.
+ */
+export const addBiometricTremor = (
+  points: Vector[],
+  intensity: number = 0.35
+): Vector[] => {
+  if (points.length < 4 || intensity <= 0) return points
+
+  const phaseX = Math.random() * Math.PI * 2
+  const phaseY = Math.random() * Math.PI * 2
+  const frequency = randomNumberRange(8, 12)
+
+  return points.map((p, i) => {
+    // Don't modify the exact start or end coordinates so clicks hit their target
+    if (i === 0 || i === points.length - 1) return p
+
+    const progress = i / (points.length - 1)
+    // Tremor is strongest in mid-flight and settles down towards target contact
+    const envelope = Math.sin(progress * Math.PI)
+    const jitterMagnitude = intensity * envelope
+
+    const tremorX = Math.sin(progress * frequency * Math.PI * 2 + phaseX) * jitterMagnitude + (Math.random() - 0.5) * (jitterMagnitude * 0.4)
+    const tremorY = Math.cos(progress * frequency * Math.PI * 2 + phaseY) * jitterMagnitude + (Math.random() - 0.5) * (jitterMagnitude * 0.4)
+
+    return {
+      x: Number((p.x + tremorX).toFixed(2)),
+      y: Number((p.y + tremorY).toFixed(2))
+    }
+  })
+}
