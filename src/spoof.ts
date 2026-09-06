@@ -216,6 +216,10 @@ export interface DragAndDropOptions extends MoveOptions {
   readonly dropDelay?: number
   /** Add intermediate slight hesitation midway through dragging. @default true */
   readonly hesitateMidway?: boolean
+  /** Target iframe (by index or CSS selector) when the drop target lives inside a frame */
+  readonly targetFrame?: number | string
+  /** Source iframe (by index or CSS selector) when the drag source lives inside a frame */
+  readonly sourceFrame?: number | string
 }
 
 export interface IdleOptions {
@@ -1384,9 +1388,33 @@ export class GhostCursor {
   }
 
   /**
+   * Resolves a Frame by index or CSS selector.
+   */
+  private async resolveFrameSpec (frameSpec: number | string): Promise<Frame> {
+    if (typeof frameSpec === 'number') {
+      const frames = this.page.frames()
+      if (frameSpec < 0 || frameSpec >= frames.length) {
+        throw new Error(`Invalid frame index ${frameSpec}. Available: 0 to ${frames.length - 1}`)
+      }
+      return frames[frameSpec]
+    }
+    // CSS selector of the iframe element on the main page
+    const frameElement = await this.page.$(frameSpec)
+    if (frameElement === null) {
+      throw new Error(`Could not find iframe element with selector "${frameSpec}"`)
+    }
+    const frame = await (frameElement as unknown as ElementHandle<HTMLIFrameElement>).contentFrame()
+    if (frame === null) {
+      throw new Error(`Could not resolve content frame for selector "${frameSpec}"`)
+    }
+    return frame
+  }
+
+  /**
    * Drag and drop from source to destination.
    * Emulates human slider manipulation, CAPTCHA slide-to-verify, and drag interactions
    * with acceleration, realistic friction, and optional intermediate hesitation.
+   * Supports cross-frame targets via `sourceFrame` / `targetFrame` options.
    */
   public async dragAndDrop (
     source: string | ElementHandle | Vector,
@@ -1400,9 +1428,14 @@ export class GhostCursor {
       ...options
     } satisfies DragAndDropOptions
 
-    // Move smoothly to source
+    // Move smoothly to source (resolve source frame if specified)
     if (typeof source === 'object' && 'x' in source && 'y' in source) {
       await this.moveTo(source, optionsResolved)
+    } else if (optionsResolved.sourceFrame !== undefined) {
+      const srcFrame = await this.resolveFrameSpec(optionsResolved.sourceFrame)
+      const srcElem = await srcFrame.$(source as string)
+      if (srcElem === null) throw new Error(`Could not find source selector "${source as string}" inside source frame`)
+      await this.move(srcElem, optionsResolved)
     } else {
       await this.move(source as string | ElementHandle, optionsResolved)
     }
@@ -1412,10 +1445,15 @@ export class GhostCursor {
     await this.mouseDown({ button: 'left' })
     await delay(randomNumberRange(80, 180))
 
-    // Determine target coordinates
+    // Determine target coordinates (resolve target frame if specified)
     let targetVec: Vector
     if (typeof target === 'object' && 'x' in target && 'y' in target) {
       targetVec = target as Vector
+    } else if (optionsResolved.targetFrame !== undefined) {
+      // Cross-frame drag: translate the in-frame element box to page coordinates
+      const tgtFrame = await this.resolveFrameSpec(optionsResolved.targetFrame)
+      const box = await this.getFrameElementBox(tgtFrame, target as string)
+      targetVec = getRandomBoxPoint(box, { paddingPercentage: optionsResolved.paddingPercentage ?? 10 })
     } else {
       const targetElem = await this.getElement(target as string | ElementHandle)
       const box = await getElementBox(this.page, targetElem)
@@ -1448,13 +1486,35 @@ export class GhostCursor {
     const interval = options?.interval ?? 800
     const startTime = Date.now()
 
+    // Null-safe viewport bounds: used to keep drift within the real viewport
+    let maxX = 1900
+    let maxY = 1000
+    try {
+      const viewport = this.page.viewportSize() ?? await this.page.evaluate(() => ({
+        width: window.innerWidth || 1920,
+        height: window.innerHeight || 1080
+      }))
+      maxX = Math.max(20, viewport.width - 20)
+      maxY = Math.max(20, viewport.height - 20)
+    } catch { /* fall back to defaults */ }
+
     while (Date.now() - startTime < duration) {
       if (!this.isConnected()) return
-      const randPoint = await getRandomPagePoint(this.page)
+      // Null-safe random point: fall back to a viewport-relative point if the
+      // document is not ready or returns an invalid box.
+      let randPoint: Vector
+      try {
+        randPoint = await getRandomPagePoint(this.page)
+        if (!Number.isFinite(randPoint.x) || !Number.isFinite(randPoint.y)) {
+          randPoint = { x: maxX / 2, y: maxY / 2 }
+        }
+      } catch {
+        randPoint = { x: maxX / 2, y: maxY / 2 }
+      }
       // Small drift vector rather than teleporting across the entire screen
       const driftVector: Vector = {
-        x: clamp(this.location.x + (randPoint.x - this.location.x) * 0.35, 10, 1900),
-        y: clamp(this.location.y + (randPoint.y - this.location.y) * 0.35, 10, 1000)
+        x: clamp(this.location.x + (randPoint.x - this.location.x) * 0.35, 10, maxX),
+        y: clamp(this.location.y + (randPoint.y - this.location.y) * 0.35, 10, maxY)
       }
       await this.moveTo(driftVector, { moveSpeed: 0.5, spreadOverride: 30 })
       await delay(interval * randomNumberRange(0.7, 1.3))
