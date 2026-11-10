@@ -1491,8 +1491,8 @@ export class GhostCursor {
     let maxY = 1000
     try {
       const viewport = this.page.viewportSize() ?? await this.page.evaluate(() => ({
-        width: window.innerWidth || 1920,
-        height: window.innerHeight || 1080
+        width: window.innerWidth > 0 ? window.innerWidth : 1920,
+        height: window.innerHeight > 0 ? window.innerHeight : 1080
       }))
       maxX = Math.max(20, viewport.width - 20)
       maxY = Math.max(20, viewport.height - 20)
